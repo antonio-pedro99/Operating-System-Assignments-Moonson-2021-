@@ -12,10 +12,6 @@
 int flag = 0;
 int firstFivesSent = 0;
 
-struct request {
-    char *data[5];
-};
-
 struct message {
     int id;
     char string[5];

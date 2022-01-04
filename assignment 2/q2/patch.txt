@@ -1,0 +1,38 @@
+diff --git a/linux-5.15.4/arch/x86/entry/syscalls/syscall_64.tbl b/linux-5.15.4/arch/x86/entry/syscalls/syscall_64.tbl
+index d69b2c9..315d932 100644
+--- a/linux-5.15.4/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/linux-5.15.4/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -413,5 +413,6 @@
+ 545	x32	execveat		compat_sys_execveat
+ 546	x32	preadv2			compat_sys_preadv64v2
+ 547	x32	pwritev2		compat_sys_pwritev64v2
+-# This is the end of the legacy x32 range.  Numbers 548 and above are
++548	common	kernel_2d_memcpy	sys_kernel_2d_memcpy
++#This is the end of the legacy x32 range.  Numbers 548 and above are
+ # not special and are not to be used for x32-specific syscalls.
+diff --git a/linux-5.15.4/kernel/sys.c b/linux-5.15.4/kernel/sys.c
+index 8fdac0d..8a95ab9 100644
+--- a/linux-5.15.4/kernel/sys.c
++++ b/linux-5.15.4/kernel/sys.c
+@@ -2694,4 +2694,21 @@ COMPAT_SYSCALL_DEFINE1(sysinfo, struct compat_sysinfo __user *, info)
+ 		return -EFAULT;
+ 	return 0;
+ }
++SYSCALL_DEFINE3(kernel_2d_memcpy , int , size , double*, source, double *, destination)
++{
++	int _size = sizeof(double) * size;
++	double *tmp = (double *) kcalloc(size, sizeof(double), GFP_KERNEL);
++
++	if (__copy_from_user(tmp, source, _size) != 0) {
++		return -EFAULT;
++	}
++
++	if (__copy_to_user(destination, tmp, _size) != 0) {
++		return -EFAULT;
++	}
++		
++		printk(KERN_INFO "Copied");
++		return 0;
++}
++
+ #endif /* CONFIG_COMPAT */

@@ -1,0 +1,53 @@
+diff --git a/linux-5.15.4/kernel/sys.c b/linux-5.15.4/kernel/sys.c
+index ba3815f..c0bf4c2 100644
+--- a/linux-5.15.4/kernel/sys.c
++++ b/linux-5.15.4/kernel/sys.c
+@@ -2709,5 +2709,48 @@ SYSCALL_DEFINE3(kernel_2d_memcpy , int , size , double*, source, double *, desti
+                printk(KERN_INFO "Copied");
+                return 0;
+ }
++char *kernel_queue;
++sem_t e;
++sem_t f;
+ 
++SYSCALL_DEFINE3(kernel_writer, char*, str, int, size, sem_t, mutex)
++{
++   
++    
++    char *queue = (char *)kmalloc(size, sizeof(char));
++    int _size = sizeof(int) * size;
++
++    sem_init(&e, 0, _size);
++    sem_init(&f, 0, 0);
++
++    if (__copy_from_user(queue, str, _size) != 0)
++    {
++        return -EFAULT;
++    }
++    // enqueue the string
++    sem_wait(&e);
++    pthread_mutex_lock(&mutex);
++    memcpy(kernel_queue, queue, sizeof(queue));
++    pthread_mutex_unlock(&mutex);
++    sem_post(&f);
++
++    return 0;
++}
++
++SYSCALL_DEFINE3(kernel_reader, char*, buff, int, size, sem_t, mutex)
++{
++    int _size = sizeof(int) * size;
++
++    // dequeue the string
++    sem_wait(&f);
++    pthread_mutex_lock(&mutex);
++    if (__copy_to_user(kernel_queue, buff, strlen(kernel_queue)) != 0)
++    {
++        return -EFAULT;
++    }
++    pthread_mutex_unlock(&mutex);
++    sem_post(&e);
++
++    return 0;
++}
+ #endif /* CONFIG_COMPAT */
